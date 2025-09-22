@@ -161,7 +161,7 @@ Kelas utama dalam implementasi:
 
 ---
 
-## ▶️ Cara Menjalankan
+## ▶ Cara Menjalankan
 
 1. Clone repository:
 
@@ -185,6 +185,6 @@ Kelas utama dalam implementasi:
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 Program ini dibuat sebagai solusi tugas akhir **KPP Programming Pelatdas 2025** oleh Ahnaf Al Ghiffarri Ahtasyafi (5024251020) Teknik Komputer
