@@ -84,7 +84,7 @@ public:
         idStart = graph.getId(start);
         idTarget = graph.getId(target);
 
-        using Item = tuple<int, int, State>; // (totalEnergy, totalMinutes, state)
+        using Item = tuple<int, int, State>; 
         struct Cmp {
             bool operator()(const Item &a, const Item &b) const {
                 if (get<0>(a) != get<0>(b)) return get<0>(a) > get<0>(b);
@@ -124,7 +124,6 @@ public:
                 }
             }
 
-            // wait at rest point (NOT used for path, just alternate states)
             if (graph.isRestPoint[st.node]) {
                 int toNextHour = (60 - st.minuteMod60) % 60;
                 if (toNextHour == 0) toNextHour = 60;
@@ -134,12 +133,11 @@ public:
                 State ns{st.node, newMod60, newParity, st.consumed};
                 if (!best.count(ns) || best[ns] > totalEnergy) {
                     best[ns] = totalEnergy;
-                    parent[ns] = {st, st.node, totalMinutes}; // waktu rest tidak dianggap arrival
+                    parent[ns] = {st, st.node, totalMinutes}; 
                     pq.push({totalEnergy, newMinutes, ns});
                 }
             }
 
-            // traverse edges
             for (auto &e : graph.adj[st.node]) {
                 int baseLen = e.length + e.obstacle;
                 int energyCost = baseLen;
@@ -234,8 +232,8 @@ int main() {
     readList(graph.isRestPoint);
     readList(graph.isCharge);
     vector<char> dummy;
-    readList(dummy); // M
-    readList(dummy); // E
+    readList(dummy);
+    readList(dummy);
 
     int startHour;
     cin >> startHour;
