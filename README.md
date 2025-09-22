@@ -155,7 +155,7 @@ Robot gagal dalam mencapai tujuan :(
 
 Kelas utama dalam implementasi:
 
-* `Graph` → representasi jaringan jalan.
+* `Graph` → representasi connected road.
 * `RobotNavigator` → logika navigasi, termasuk path finding.
 * `State` & `StateHash` → representasi kondisi robot (posisi, waktu, energi).
 
