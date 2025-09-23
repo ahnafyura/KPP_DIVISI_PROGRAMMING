@@ -113,6 +113,39 @@ E (menit 8)
 T (menit 10)
 ```
 
+### Penjelasan Input
+
+* `6 7` → jumlah node = 6, jumlah edge = 7.
+* `S A 200 0` → jalan dari **S ke A** sepanjang 200, tanpa tambahan energi (biaya total = 200).
+* `A B 300 50` → jalan dari **A ke B** sepanjang 300 + obstacle 50 → biaya total = 350.
+* `A C 150 0` → jalan dari **A ke C** sepanjang 150, biaya total = 150.
+* `B D 400 100` → jalan dari **B ke D** sepanjang 400 + obstacle 100 → biaya total = 500.
+* `C D 100 0` → jalan dari **C ke D** sepanjang 100, biaya total = 100.
+* `D E 250 0` → jalan dari **D ke E** sepanjang 250, biaya total = 250.
+* `E T 200 0` → jalan dari **E ke T** sepanjang 200, biaya total = 200.
+* `S T` → start = S, target = T.
+* `C` → node C adalah **charging station**.
+* `E` → node E adalah **rest point**.
+* `M` → aturan lalu lintas terkait **jam ganjil/genap**.
+* `-` → delimiter.
+* `1` → waktu awal = 1 (ganjil).
+
+### Perhitungan Jalur
+
+Misalnya dipilih jalur **S → A → C → D → E → T**:
+
+* Energi = 200 (S-A) + 150 (A-C) + 100 (C-D) + 250 (D-E) + 200 (E-T) = **900**.
+* Jika kapasitas energi robot < 900, maka wajib mengisi ulang di **C** (charging station).
+* Dari sisi waktu: setiap edge menambah 1 satuan waktu. Mulai dari waktu = 1 (ganjil), maka:
+
+  * S→A tiba pada t=2 (genap)
+  * A→C tiba pada t=3 (ganjil)
+  * C→D tiba pada t=4 (genap)
+  * D→E tiba pada t=5 (ganjil)
+  * E→T tiba pada t=6 (genap)
+  * Jika aturan M menyatakan misalnya jalur C ke D hanya boleh ditempuh pada jam ganjil, maka pada t=3 robot belum bisa jalan langsung ke D, sehingga harus menunggu di C. Dengan menunggu 1 satuan waktu (hingga t=4 genap), sinkronisasi gagal karena jalur butuh ganjil. Jadi meski energi cukup, aturan waktu tetap bisa membuat jalur tidak valid.
+
+
 ### Sample Input 2
 
 ```
