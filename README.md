@@ -1,8 +1,8 @@
-# KPP Programming Pelatdas 2025 — Robot Navigator
+# KPP Programming Pelatdas 2025 (Robot Navigator)
 
 ## Deskripsi
 
-Program ini merupakan solusi dari soal **KPP Programming Pelatdas 2025** yang menguji kemampuan penerapan **OOP (Object-Oriented Programming)** dan **algoritma path finding** dalam simulasi robot otonom. Robot harus menavigasi jaringan jalan dari node **S** ke **T** dengan mempertimbangkan panjang jalan, obstacle, kondisi waktu (ganjil/genap), kemampuan menunggu di **rest point**, serta mengisi energi di **charging station**.
+Program ini merupakan solusi dari soal KPP Programming Pelatdas 2025 yang menguji kemampuan penerapan OOP (Object-Oriented Programming) dan algoritma path finding dalam simulasi robot otonom. Robot harus menavigasi jaringan jalan dari node **S** ke **T** dengan mempertimbangkan panjang jalan, obstacle, kondisi waktu (ganjil/genap), kemampuan menunggu di rest point, serta mengisi energi di charging station.
 
 Tujuan utama adalah mencari jalur yang meminimalkan **total energi yang dikonsumsi**, serta menampilkan lintasan dan waktu tiba di setiap node.
 
@@ -23,7 +23,7 @@ Tujuan utama adalah mencari jalur yang meminimalkan **total energi yang dikonsum
 
 3. **Rest Point (R)**
 
-   * Robot boleh menunggu integer menit di node ini untuk mengubah kondisi waktu (ganjil ↔ genap).
+   * Robot boleh menunggu integer menit di node ini untuk mengubah kondisi waktu (ganjil ke genap).
 
 4. **Charging Station (C)**
 
@@ -134,7 +134,7 @@ S T
 Robot gagal dalam mencapai tujuan :(
 ```
 
-**Penjelasan (spesifik) mengapa perjalanan gagal pada Sample Input 2:**
+**Penjelasan mengapa perjalanan gagal pada Sample Input 2:**
 
 1. **Kapasitas energi awal:** robot memulai dengan energi penuh = **1000**.
 2. **Edge pertama (S -> A):** total energi dasar = `w + o = 600 + 200 = 800`.
@@ -143,7 +143,7 @@ Robot gagal dalam mencapai tujuan :(
    * **1040 > 1000**, sehingga robot **tidak memiliki cukup energi** untuk melewati edge pertama. Karena tidak ada charging station atau rest point sebelum edge itu, robot tidak bisa menempuh langkah pertama.
 3. **Catatan tambahan (tanpa pengaruh waktu):** bahkan jika faktor waktu diabaikan, setelah melewati S→A robot tersisa `1000 - 800 = 200` energi, yang masih **tidak cukup** untuk melewati A→B (membutuhkan 300). Jadi ketiadaan charging station pada jalur dan tidak adanya rest point/opsi menunggu membuat rute tidak dapat dilanjutkan.
 
-**Kesimpulan:** kegagalan disebabkan oleh kombinasi kebutuhan energi yang melebihi kapasitas pada edge pertama akibat obstacle + pengaruh jam ganjil, serta tidak tersedianya charging station atau rest point yang memungkinkan robot menunggu atau mengisi ulang sebelum mencoba melewati edge tersebut.
+**Kesimpulan:** kegagalan disebabkan oleh kebutuhan energi yang melebihi kapasitas pada edge pertama akibat obstacle + pengaruh jam ganjil, serta tidak tersedianya charging station atau rest point yang memungkinkan robot menunggu atau mengisi ulang sebelum mencoba melewati edge tersebut.
 
 ---
 
