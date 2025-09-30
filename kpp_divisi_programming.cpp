@@ -2,190 +2,271 @@
 using namespace std;
 
 const int energiMaks = 1000;
+const bool pakeFaktorWaktu = false;
 
-class Edge {
+class Jalan {
 public:
     int tujuan;
     int panjang;
     int halangan;
-    Edge(int t, int l, int o) : tujuan(t), panjang(l), halangan(o) {}
+    Jalan(int t=0,int p=0,int h=0):tujuan(t),panjang(p),halangan(h){}
 };
 
-class Graph {
+class Kondisi {
+public:
+    int simpul;
+    int menitMod60;
+    int jamGanjil;
+    int terpakai;
+
+    Kondisi(int s=0,int m=0,int j=0,int t=0):simpul(s),menitMod60(m),jamGanjil(j),terpakai(t){}
+};
+
+class Peta {
 public:
     int N;
-    unordered_map<string,int> NamakeID;
-    vector<string> IDkenama;
-    vector<vector<Edge>> adj;
-    vector<char> isRest, isCharge;
+    unordered_map<string,int> namaKeId;
+    vector<string> idKeNama;
+    vector<vector<Jalan>> tetangga;
+    vector<char> titikIstirahat;
+    vector<char> titikCas;
 
-    Graph(int n=0){ init(n); }
+    Peta(int n=0){ init(n); }
 
     void init(int n){
-        N=n;
-        adj.assign(N+1,{});
-        isRest.assign(N+1,0);
-        isCharge.assign(N+1,0);
-        IDkenama.assign(N+1,"");
+        N = max(0, n);
+        namaKeId.clear();
+        idKeNama.clear();
+        tetangga.clear();
+        titikIstirahat.clear();
+        titikCas.clear();
     }
 
-    int getId(const string &s){
-        if(NamakeID.count(s)) return NamakeID[s];
-        int id=(int)NamakeID.size()+1;
-        NamakeID[s]=id;
-        if((int)IDkenama.size()<=id) IDkenama.resize(id+1);
-        IDkenama[id]=s;
+    int ambilId(const string &nama){
+        auto it = namaKeId.find(nama);
+        if(it != namaKeId.end()) return it->second;
+        int id = (int)idKeNama.size();
+        namaKeId[nama] = id;
+        idKeNama.push_back(nama);
+        tetangga.emplace_back();
+        titikIstirahat.push_back(0);
+        titikCas.push_back(0);
         return id;
     }
 
-    void addEdge(const string &u,const string &v,int w,int o){
-        int a=getId(u), b=getId(v);
-        if((int)adj.size()<=max(a,b)){
-            adj.resize(max(a,b)+1);
-            isRest.resize(max(a,b)+1);
-            isCharge.resize(max(a,b)+1);
-        }
-        adj[a].push_back(Edge(b,w,o));
-        adj[b].push_back(Edge(a,w,o));
+    void tambahJalan(const string &u, const string &v, int w, int o){
+        int a = ambilId(u);
+        int b = ambilId(v);
+        tetangga[a].push_back(Jalan(b,w,o));
+        tetangga[b].push_back(Jalan(a,w,o));
     }
 };
 
-class RobotNavigator {
+class Robot {
 public:
-    Graph &graph;
-    int startHour;
-    int idStart, idTarget;
+    Peta &peta;
+    int jamMulai;
 
-    RobotNavigator(Graph &g,int h):graph(g),startHour(h){}
+    Robot(Peta &p, int jam): peta(p), jamMulai(jam) {}
+    string buatKunci(const Kondisi &k){
+        return to_string(k.simpul) + "_" + to_string(k.menitMod60) + "_" + to_string(k.jamGanjil) + "_" + to_string(k.terpakai);
+    }
 
-    bool shortestPath(const string &S,const string &T){
-        idStart=graph.getId(S);
-        idTarget=graph.getId(T);
+    bool cariDanCetak(const string &namaAwal, const string &namaTujuan){
+        if(peta.namaKeId.find(namaAwal) == peta.namaKeId.end() ||
+           peta.namaKeId.find(namaTujuan) == peta.namaKeId.end()){
+            cout << "Robot gagal dalam mencapai tujuan :(\n";
+            return false;
+        }
 
-        using P=pair<int,int>;
-        vector<int> dist(graph.N+5,INT_MAX);
-        vector<int> energy(graph.N+5,energiMaks);
-        vector<int> parent(graph.N+5,-1);
-        vector<int> timeArr(graph.N+5,-1);
+        int idAwal = peta.ambilId(namaAwal);
+        int idTujuan = peta.ambilId(namaTujuan);
 
-        priority_queue<P,vector<P>,greater<P>> pq;
-        dist[idStart]=0;
-        timeArr[idStart]=0;
-        pq.push({0,idStart});
+        using Item = tuple<int,int,Kondisi>;
+        struct Banding {
+            bool operator()(Item const &a, Item const &b) const {
+                if(get<0>(a) != get<0>(b)) return get<0>(a) > get<0>(b);
+                return get<1>(a) > get<1>(b);
+            }
+        };
+
+        priority_queue<Item, vector<Item>, Banding> pq;
+        unordered_map<string,int> terbaik;
+        unordered_map<string, pair<string,int>> parent;
+
+        Kondisi awal(idAwal, 0, jamMulai % 2, 0);
+        string keyAwal = buatKunci(awal);
+        terbaik[keyAwal] = 0;
+        parent[keyAwal] = make_pair(string("ROOT"), 0);
+        pq.push({0, 0, awal});
+
+        bool ketemu = false;
+        string keyAkhir;
+        Kondisi kondisiAkhir;
 
         while(!pq.empty()){
-            auto [d,u]=pq.top(); pq.pop();
-            if(d>dist[u]) continue;
+            auto [energiTotal, menitTotal, state] = pq.top(); pq.pop();
+            string keyState = buatKunci(state);
+            if(terbaik.find(keyState) != terbaik.end() && terbaik[keyState] < energiTotal) continue;
 
-            if(u==idTarget){
-                printResult(dist,parent,timeArr);
-                return true;
+            if(state.simpul == idTujuan){
+                ketemu = true;
+                keyAkhir = keyState;
+                kondisiAkhir = state;
+                break;
             }
 
-            if(graph.isRest[u]){
-                int newTime=timeArr[u]+60;
-                int newCost=dist[u];
-                if(newCost<dist[u]){}
-            }
-
-            for(auto &e:graph.adj[u]){
-                int base=e.panjang+e.halangan;
-                int nowHour=(startHour*60+timeArr[u])/60;
-                double factor=(nowHour%2==0)?0.8:1.3;
-                int cost=(int)ceil(base*factor);
-
-                if(cost>energiMaks) continue;
-                if(cost>energy[u]) continue;
-
-                int newDist=dist[u]+cost;
-                int v=e.tujuan;
-                int newTime=timeArr[u]+2;
-
-                if(graph.isCharge[v]){
-                    energy[v]=energiMaks;
-                } else {
-                    energy[v]=energy[u]-cost;
-                }
-
-                if(newDist<dist[v]){
-                    dist[v]=newDist;
-                    parent[v]=u;
-                    timeArr[v]=newTime;
-                    pq.push({dist[v],v});
+            if(peta.titikCas[state.simpul] && state.terpakai != 0){
+                Kondisi ns = state; ns.terpakai = 0;
+                string k2 = buatKunci(ns);
+                if(!terbaik.count(k2) || terbaik[k2] > energiTotal){
+                    terbaik[k2] = energiTotal;
+                    parent[k2] = make_pair(keyState, menitTotal);
+                    pq.push({energiTotal, menitTotal, ns});
                 }
             }
-        }
-        cout<<"Robot gagal dalam mencapai tujuan :(\n";
-        return false;
-    }
 
-    void printResult(vector<int>&dist,vector<int>&parent,vector<int>&timeArr){
-        cout<<"Total energi minimum: "<<dist[idTarget]<<"\n";
-        vector<int> path;
-        int cur=idTarget;
-        while(cur!=-1){ path.push_back(cur); cur=parent[cur]; }
-        reverse(path.begin(),path.end());
+            if(peta.titikIstirahat[state.simpul]){
+                int tunggu = (60 - state.menitMod60) % 60;
+                if(tunggu == 0) tunggu = 60;
+                int menitBaru = menitTotal + tunggu;
+                int modBaru = (state.menitMod60 + tunggu) % 60;
+                int parBaru = 1 - state.jamGanjil;
+                Kondisi ns(state.simpul, modBaru, parBaru, state.terpakai);
+                string k2 = buatKunci(ns);
+                if(!terbaik.count(k2) || terbaik[k2] > energiTotal){
+                    terbaik[k2] = energiTotal;
+                    parent[k2] = make_pair(keyState, menitBaru);
+                    pq.push({energiTotal, menitBaru, ns});
+                }
+            }
 
-        cout<<"Jalur: ";
-        for(size_t i=0;i<path.size();i++){
-            if(i) cout<<" -> ";
-            cout<<graph.IDkenama[path[i]];
+            // traverse edges
+            for(const Jalan &e : peta.tetangga[state.simpul]){
+                int dasar = e.panjang + e.halangan;
+                if(dasar < 0) continue;
+                double faktor = 1.0;
+                if(pakeFaktorWaktu){
+                    faktor = (state.jamGanjil == 1) ? 1.3 : 0.8;
+                }
+                int biaya = (int)ceil(dasar * faktor);
+                if(biaya > energiMaks) continue;
+                if(state.terpakai + biaya > energiMaks) continue;
+
+                int menitBaru = menitTotal + 2;
+                int menitAbsolut = jamMulai * 60 + menitBaru;
+                int parBaru = (menitAbsolut / 60) % 2;
+                int modBaru = menitBaru % 60;
+                int terpakaiBaru = state.terpakai + biaya;
+                if(peta.titikCas[e.tujuan]) terpakaiBaru = 0;
+
+                int energiBaru = energiTotal + biaya;
+                Kondisi ns(e.tujuan, modBaru, parBaru, terpakaiBaru);
+                string k2 = buatKunci(ns);
+
+                if(!terbaik.count(k2) || terbaik[k2] > energiBaru){
+                    terbaik[k2] = energiBaru;
+                    parent[k2] = make_pair(keyState, menitBaru);
+                    pq.push({energiBaru, menitBaru, ns});
+                }
+            }
         }
-        cout<<"\nWaktu tiba:\n";
-        for(size_t i=0;i<path.size();i++){
-            cout<<graph.IDkenama[path[i]]<<" (menit "<<timeArr[path[i]]<<")\n";
+
+        if(!ketemu){
+            cout << "Robot gagal dalam mencapai tujuan :(\n";
+            return false;
         }
+
+        vector<pair<int,int>> urut;
+        string curKey = keyAkhir;
+        while(true){
+            auto it = parent.find(curKey);
+            if(it == parent.end()) break;
+            string parentKey = it->second.first;
+            int arrival = it->second.second;
+            int pos1 = curKey.find('_');
+            string nodeStr = curKey.substr(0, pos1);
+            int nodeId = stoi(nodeStr);
+            urut.push_back({nodeId, arrival});
+            if(parentKey == "ROOT") break;
+            curKey = parentKey;
+        }
+        reverse(urut.begin(), urut.end());
+
+        if(urut.size()>0 && urut.front().second != 0){
+            urut.insert(urut.begin(), {idAwal, 0});
+        }
+
+        cout << "Total energi minimum: " << terbaik[keyAkhir] << "\n";
+
+        cout << "Jalur: ";
+        for(size_t i=0;i<urut.size();++i){
+            if(i) cout << " -> ";
+            cout << peta.idKeNama[urut[i].first];
+        }
+        cout << "\nWaktu tiba:\n";
+        for(size_t i=0;i<urut.size();++i){
+            cout << peta.idKeNama[urut[i].first] << " (menit " << urut[i].second << ")\n";
+        }
+
+        return true;
     }
 };
 
-int main() {
+int main(){
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
 
     int N, M;
-    cin >> N >> M;
-    cout << "======PLAY=====" << endl;
+    if(!(cin >> N >> M)) return 0;
 
-    Graph g(N);
-    for (int i = 0; i < M; i++) {
+    Peta p;
+    p.init(N);
+
+    for(int i=0;i<M;i++){
         string u, v;
         int w, o;
         cin >> u >> v >> w >> o;
-        g.addEdge(u, v, w, o);
+        p.tambahJalan(u, v, w, o);
     }
 
     string S, T;
     cin >> S >> T;
 
-    auto readList = [&](vector<char> &marker) {
-        string line;
+    auto bacaDaftar = [&](vector<char> &penanda){
+        string baris;
         cin >> ws;
-        getline(cin, line);
-        stringstream ss(line);
-        string s;
-        while (ss >> s) {
-            if (s == "-") {
-                marker.assign(marker.size(), 0);
+        getline(cin, baris);
+        if(baris.size() == 0){
+            if((int)penanda.size() < (int)p.idKeNama.size()) penanda.resize(p.idKeNama.size());
+            return;
+        }
+        stringstream ss(baris);
+        string token;
+        vector<int> ids;
+        while(ss >> token){
+            if(token == "-"){
+                penanda.assign(p.idKeNama.size(), 0);
                 return;
             }
-            int id = g.getId(s);
-            if ((int)marker.size() <= id) marker.resize(id + 1);
-            marker[id] = 1;
+            int id = p.ambilId(token);
+            ids.push_back(id);
         }
+        if((int)penanda.size() < (int)p.idKeNama.size()) penanda.resize(p.idKeNama.size());
+        for(int id: ids) penanda[id] = 1;
     };
 
-    readList(g.isRest);
-    readList(g.isCharge);
+    bacaDaftar(p.titikIstirahat);
+    bacaDaftar(p.titikCas);
     vector<char> dummy;
-    readList(dummy);
-    readList(dummy);
+    bacaDaftar(dummy);
+    bacaDaftar(dummy);
 
-    int startHour;
-    cin >> startHour;
+    int jamAwal;
+    cin >> jamAwal;
 
-    RobotNavigator robot(g, startHour);
-    robot.shortestPath(S, T);
+    Robot bot(p, jamAwal);
+    bot.cariDanCetak(S, T);
 
     return 0;
 }
-
